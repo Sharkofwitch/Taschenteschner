@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent } from "./components/ui/card";
+import { Input } from "./components/ui/input";
+import { Button } from "./components/ui/button";
+import { Avatar, AvatarImage } from "./components/ui/avatar";
 import { motion } from "framer-motion";
 import { Bot } from "lucide-react";
 
@@ -15,22 +15,29 @@ export default function Taschenteschner() {
     const newMessages = [...messages, { text: input, sender: "user" }];
     setMessages(newMessages);
     setInput("");
-
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "mistral-7b",
-        messages: [{ role: "system", content: "Du bist ein Mathe-Nachhilfe-Experte." }, { role: "user", content: input }],
-        max_tokens: 100,
-      }),
-    });
-
-    const data = await response.json();
-    setMessages([...newMessages, { text: data.choices[0].message.content, sender: "bot" }]);
+  
+    try {
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.VITE_OPENROUTER_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "mistral-7b",
+          messages: [{ role: "system", content: "Du bist ein Mathe-Nachhilfe-Experte." }, { role: "user", content: input }],
+          max_tokens: 100,
+        }),
+      });
+  
+      if (!response.ok) throw new Error("Fehlerhafte API-Antwort");
+  
+      const data = await response.json();
+      setMessages([...newMessages, { text: data.choices[0].message.content, sender: "bot" }]);
+    } catch (error) {
+      console.error("API-Fehler:", error);
+      setMessages([...newMessages, { text: "Fehler beim Abrufen der Antwort. Bitte versuche es später erneut.", sender: "bot" }]);
+    }
   };
 
   return (
